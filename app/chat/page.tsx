@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef,useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { account, tablesDB, realtime } from "@/lib/appwrite";
 import { ID, Query, Channel, type Models } from "appwrite";
 
@@ -30,7 +30,9 @@ export default function Chat() {
   const [loading, setLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [error, setError] = useState("");
+
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
   // Load current user and all other users
   useEffect(() => {
     const loadChat = async () => {
@@ -112,75 +114,75 @@ export default function Chat() {
   }, [currentUser, selectedUser]);
 
   // Realtime subscription
-useEffect(() => {
-  if (!currentUser || !selectedUser) {
-    return;
-  }
+  useEffect(() => {
+    if (!currentUser || !selectedUser) {
+      return;
+    }
 
-  const subscribeToMessages = async () => {
-    try {
-      const conversationId = [
-        currentUser.$id,
-        selectedUser.userId,
-      ]
-        .sort()
-        .join("_");
+    const subscribeToMessages = async () => {
+      try {
+        const conversationId = [
+          currentUser.$id,
+          selectedUser.userId,
+        ]
+          .sort()
+          .join("_");
 
-      const subscription = await realtime.subscribe(
-        Channel.tablesdb(
-          process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
-        )
-          .table(
-            process.env.NEXT_PUBLIC_APPWRITE_MESSAGES_TABLE_ID!
+        const subscription = await realtime.subscribe(
+          Channel.tablesdb(
+            process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
           )
-          .row()
-          .create(),
-        (response) => {
-          const newMessage = response.payload as Message;
+            .table(
+              process.env.NEXT_PUBLIC_APPWRITE_MESSAGES_TABLE_ID!
+            )
+            .row()
+            .create(),
+          (response) => {
+            const newMessage = response.payload as Message;
 
-          if (newMessage.conversationId !== conversationId) {
-            return;
-          }
-
-          setMessages((prev) => {
-            const alreadyExists = prev.some(
-              (message) => message.$id === newMessage.$id
-            );
-
-            if (alreadyExists) {
-              return prev;
+            if (newMessage.conversationId !== conversationId) {
+              return;
             }
 
-            return [...prev, newMessage];
-          });
-        }
-      );
+            setMessages((prev) => {
+              const alreadyExists = prev.some(
+                (message) => message.$id === newMessage.$id
+              );
 
-      return subscription;
-    } catch (error) {
-      console.error("Realtime subscription error:", error);
-    }
-  };
+              if (alreadyExists) {
+                return prev;
+              }
 
-  let subscription: any;
+              return [...prev, newMessage];
+            });
+          }
+        );
 
-  subscribeToMessages().then((result) => {
-    subscription = result;
-  });
+        return subscription;
+      } catch (error) {
+        console.error("Realtime subscription error:", error);
+      }
+    };
 
-  return () => {
-    if (subscription) {
-      subscription.unsubscribe();
-    }
-  };
-}, [currentUser, selectedUser]);
+    let subscription: any;
 
-// Auto-scroll to the latest message
-useEffect(() => {
-  messagesEndRef.current?.scrollIntoView({
-    behavior: "smooth",
-  });
-}, [messages]);
+    subscribeToMessages().then((result) => {
+      subscription = result;
+    });
+
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
+  }, [currentUser, selectedUser]);
+
+  // Auto-scroll to the latest message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages]);
 
   // Send a message
   const handleSendMessage = async () => {
@@ -207,8 +209,6 @@ useEffect(() => {
         tableId: process.env.NEXT_PUBLIC_APPWRITE_MESSAGES_TABLE_ID!,
         rowId: ID.unique(),
 
-        
-
         data: {
           conversationId,
           senderId: currentUser.$id,
@@ -220,15 +220,16 @@ useEffect(() => {
 
       setMessages((prev) => {
         const alreadyExists = prev.some(
-        (message) => message.$id === newMessage.$id
+          (message) => message.$id === newMessage.$id
         );
 
         if (alreadyExists) {
-         return prev;
+          return prev;
         }
 
         return [...prev, newMessage];
-    });
+      });
+
       setMessageText("");
     } catch (error: any) {
       console.error(error);
@@ -250,16 +251,19 @@ useEffect(() => {
       <div className="flex min-h-screen">
 
         {/* USERS SIDEBAR */}
-        <aside className="w-80 border-r border-gray-200 bg-white">
-
+        <aside
+          className={`w-full border-r border-gray-200 bg-white md:w-80 ${
+            selectedUser ? "hidden md:block" : "block"
+          }`}
+        >
           <div className="flex items-center justify-between border-b border-gray-200 p-4">
-            <div>
+            <div className="min-w-0">
               <h1 className="text-xl font-bold text-gray-900">
                 Real-Time Chat
               </h1>
 
               {currentUser && (
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 truncate text-sm text-gray-500">
                   {currentUser.name || currentUser.email}
                 </p>
               )}
@@ -267,7 +271,7 @@ useEffect(() => {
 
             <button
               onClick={handleLogout}
-              className="rounded-lg bg-red-600 px-3 py-2 text-sm text-white"
+              className="ml-3 shrink-0 rounded-lg bg-red-600 px-3 py-2 text-sm text-white hover:bg-red-700"
             >
               Logout
             </button>
@@ -305,7 +309,7 @@ useEffect(() => {
                     {user.name}
                   </p>
 
-                  <p className="text-sm text-gray-500">
+                  <p className="truncate text-sm text-gray-500">
                     {user.email}
                   </p>
                 </button>
@@ -315,10 +319,13 @@ useEffect(() => {
         </aside>
 
         {/* CHAT AREA */}
-        <section className="flex flex-1 flex-col">
-
+        <section
+          className={`min-w-0 flex-1 flex-col ${
+            selectedUser ? "flex" : "hidden md:flex"
+          }`}
+        >
           {!selectedUser ? (
-            <div className="flex flex-1 items-center justify-center">
+            <div className="flex flex-1 items-center justify-center p-6">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-gray-900">
                   Welcome to Real-Time Chat
@@ -333,18 +340,24 @@ useEffect(() => {
             <>
               {/* CHAT HEADER */}
               <div className="border-b border-gray-200 bg-white p-4">
+                <button
+                  onClick={() => setSelectedUser(null)}
+                  className="mb-3 text-sm font-medium text-blue-600 hover:text-blue-700 md:hidden"
+                >
+                  ← Back to Users
+                </button>
+
                 <h2 className="text-xl font-bold text-gray-900">
                   {selectedUser.name}
                 </h2>
 
-                <p className="text-sm text-gray-500">
+                <p className="truncate text-sm text-gray-500">
                   {selectedUser.email}
                 </p>
               </div>
 
               {/* MESSAGES */}
-              <div className="flex-1 overflow-y-auto p-6">
-
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
                 {messagesLoading && (
                   <p className="text-center text-gray-500">
                     Loading messages...
@@ -372,7 +385,7 @@ useEffect(() => {
                         }`}
                       >
                         <div
-                          className={`max-w-md rounded-xl px-4 py-3 ${
+                          className={`max-w-[85%] break-words rounded-xl px-4 py-3 sm:max-w-md ${
                             isMine
                               ? "bg-blue-600 text-white"
                               : "bg-white text-gray-900"
@@ -382,7 +395,7 @@ useEffect(() => {
                             {message.senderName}
                           </p>
 
-                          <p className="mt-1">
+                          <p className="mt-1 whitespace-pre-wrap">
                             {message.content}
                           </p>
 
@@ -405,12 +418,13 @@ useEffect(() => {
                     );
                   })}
                 </div>
+
                 <div ref={messagesEndRef} />
               </div>
 
               {/* MESSAGE INPUT */}
-              <div className="border-t border-gray-200 bg-white p-4">
-                <div className="flex gap-3">
+              <div className="border-t border-gray-200 bg-white p-3 sm:p-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                   <input
                     type="text"
                     value={messageText}
@@ -423,12 +437,12 @@ useEffect(() => {
                       }
                     }}
                     placeholder="Type a message..."
-                    className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-blue-500"
+                    className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-blue-500"
                   />
 
                   <button
                     onClick={handleSendMessage}
-                    className="rounded-lg bg-blue-600 px-6 py-3 text-white"
+                    className="w-full rounded-lg bg-blue-600 px-6 py-3 text-white hover:bg-blue-700 sm:w-auto"
                   >
                     Send
                   </button>
